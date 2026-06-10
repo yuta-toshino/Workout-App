@@ -3,7 +3,7 @@ import type { Profile } from '../types'
 import { useStore } from '../hooks/useStore'
 import { Header } from '../components/ui'
 import { Icon } from '../components/Icon'
-import { exportAll, getProfile, getSyncMeta, getTurso, importAll, setTurso } from '../lib/store'
+import { exportAll, getProfile, getProfileUpdatedAt, getSyncMeta, getTurso, importAll, setTurso } from '../lib/store'
 import { runSyncNow, saveProfile } from '../lib/actions'
 import { normalizeUrl, testConnection } from '../lib/turso'
 
@@ -21,14 +21,31 @@ export function Settings() {
 }
 
 function ProfileCard() {
+  useStore() // 同期 pull などストアの変更で再レンダリングする
   const [p, setP] = useState<Profile>(getProfile())
   const [saved, setSaved] = useState(false)
+  const [dirty, setDirty] = useState(false)
+  // 取り込み済みのプロフィール更新時刻。store 側とズレたら外部更新(同期 pull)とみなす。
+  const [seenTs, setSeenTs] = useState(getProfileUpdatedAt())
+
+  // 編集中(dirty)でなければ、同期 pull 等で更新された最新プロフィールをフォームへ反映する。
+  // 自分の編集(upd)は store を変更しないので seenTs は変わらず、ここで上書きされない。
+  const storeTs = getProfileUpdatedAt()
+  if (storeTs !== seenTs && !dirty) {
+    setSeenTs(storeTs)
+    setP(getProfile())
+    setSaved(false)
+  }
+
   const upd = (patch: Partial<Profile>) => {
     setP((prev) => ({ ...prev, ...patch }))
+    setDirty(true)
     setSaved(false)
   }
   const save = () => {
     saveProfile(p)
+    setSeenTs(getProfileUpdatedAt()) // 自分の保存を外部更新と誤検知しないよう合わせる
+    setDirty(false)
     setSaved(true)
   }
   const num = (label: string, key: keyof Profile, suffix: string, step = 1) => (

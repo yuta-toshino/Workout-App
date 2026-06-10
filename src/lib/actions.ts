@@ -214,3 +214,20 @@ export function scheduleSync() {
     })
   }, 4000)
 }
+
+/**
+ * アプリが前面に復帰した時に呼ぶ(タブ復帰 / フォーカス / ネット再接続)。
+ * 起動時とローカル書き込み後しか同期しないと、開いたままの画面は別端末の更新を
+ * リロードするまで取り込めない。復帰時に pull すれば emit 経由で画面が最新化される。
+ */
+let lastForegroundSync = 0
+export function syncOnForeground() {
+  if (!getTurso()) return
+  const t = now()
+  // focus と visibilitychange はほぼ同時に発火するため間引く
+  if (t - lastForegroundSync < 3000) return
+  lastForegroundSync = t
+  runSyncNow().catch(() => {
+    /* エラーは syncMeta に記録済み */
+  })
+}
