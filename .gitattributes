@@ -1,0 +1,4 @@
+# 改行はリポジトリ内では LF に正規化(CI=Ubuntu との一貫性のため)
+* text=auto eol=lf
+*.png binary
+*.ico binary
