@@ -129,6 +129,14 @@ export type CollectionName = keyof typeof db
 // ---- シングルトン設定 ----
 let profile: Profile = { ...DEFAULT_PROFILE, ...read<Partial<Profile>>('profile', {}) }
 let profileUpdatedAt = read<number>('profileUpdatedAt', 0)
+// 移行措置: profileUpdatedAt 追跡(commit 5a0307d)より前に保存されたプロフィールは
+// updatedAt=0 のまま push される。すると端末間 pull の比較 (remote > local) が
+// 0 > 0 で常に偽になり、デフォルト以外の実データでも同期されない。
+// 既に実データを持つ(デフォルトと異なる)場合のみ現在時刻を付与して同期可能にする。
+if (profileUpdatedAt === 0 && JSON.stringify(profile) !== JSON.stringify(DEFAULT_PROFILE)) {
+  profileUpdatedAt = now()
+  write('profileUpdatedAt', profileUpdatedAt)
+}
 export function getProfile(): Profile {
   return profile
 }
