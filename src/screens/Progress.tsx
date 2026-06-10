@@ -61,18 +61,18 @@ function BodyView({ profile, onLog }: { profile: ReturnType<typeof getProfile>; 
         <div className="stat-grid">
           <Stat value={latestW.toFixed(1)} unit="kg" label="体重" />
           <Stat value={latestBf.toFixed(0)} unit="%" label="体脂肪" color="var(--amber)" />
-          <Stat value={(latestW - profile.startWeightKg).toFixed(1)} unit="kg" label="開始から" color={latestW <= profile.startWeightKg ? 'var(--green)' : 'var(--danger)'} />
+          <Stat value={(latestW - profile.startWeightKg).toFixed(1)} unit="kg" label="開始から" />
         </div>
         <div className="divider" />
         <div className="between small muted">
           <span>開始 {profile.startWeightKg}kg / {profile.startBodyFatPct}%</span>
-          <span>目標 {profile.targetWeightKg}kg / {profile.targetBodyFatPct}%</span>
+          <span>目標 体脂肪{profile.targetBodyFatPct}%</span>
         </div>
       </div>
 
       <h3 className="section-title">体重 (kg)</h3>
       <div className="card">
-        <LineChart points={weightPts} target={profile.targetWeightKg} start={profile.startWeightKg} unit="" color="#4f8cff" />
+        <LineChart points={weightPts} start={profile.startWeightKg} unit="" color="#4f8cff" />
       </div>
 
       <h3 className="section-title">体脂肪率 (%)</h3>
