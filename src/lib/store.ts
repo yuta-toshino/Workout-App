@@ -128,12 +128,19 @@ export type CollectionName = keyof typeof db
 
 // ---- シングルトン設定 ----
 let profile: Profile = { ...DEFAULT_PROFILE, ...read<Partial<Profile>>('profile', {}) }
+let profileUpdatedAt = read<number>('profileUpdatedAt', 0)
 export function getProfile(): Profile {
   return profile
 }
-export function setProfile(p: Profile) {
+export function getProfileUpdatedAt(): number {
+  return profileUpdatedAt
+}
+/** ts 省略時は now()。同期からの取り込み時はリモートの ts を渡す。 */
+export function setProfile(p: Profile, ts?: number) {
   profile = p
   write('profile', p)
+  profileUpdatedAt = ts ?? now()
+  write('profileUpdatedAt', profileUpdatedAt)
   emit()
 }
 

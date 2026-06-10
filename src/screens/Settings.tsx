@@ -3,16 +3,8 @@ import type { Profile } from '../types'
 import { useStore } from '../hooks/useStore'
 import { Header } from '../components/ui'
 import { Icon } from '../components/Icon'
-import {
-  exportAll,
-  getProfile,
-  getSyncMeta,
-  getTurso,
-  importAll,
-  setProfile,
-  setTurso,
-} from '../lib/store'
-import { runSyncNow } from '../lib/actions'
+import { exportAll, getProfile, getSyncMeta, getTurso, importAll, setTurso } from '../lib/store'
+import { runSyncNow, saveProfile } from '../lib/actions'
 import { normalizeUrl, testConnection } from '../lib/turso'
 
 export function Settings() {
@@ -36,7 +28,7 @@ function ProfileCard() {
     setSaved(false)
   }
   const save = () => {
-    setProfile(p)
+    saveProfile(p)
     setSaved(true)
   }
   const num = (label: string, key: keyof Profile, suffix: string, step = 1) => (

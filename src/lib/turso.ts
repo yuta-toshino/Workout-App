@@ -1,5 +1,13 @@
 import type { TursoConfig } from '../types'
-import { db, setSyncMeta, type CollectionName } from './store'
+import {
+  db,
+  getProfile,
+  getProfileUpdatedAt,
+  setProfile,
+  setSyncMeta,
+  type CollectionName,
+} from './store'
+import { DEFAULT_PROFILE } from '../data/phases'
 import { now } from './id'
 
 // ===== libSQL HTTP API(Hrana over HTTP v2 / /v2/pipeline)最小クライアント =====
@@ -283,6 +291,35 @@ export async function sync(cfg: TursoConfig): Promise<{ pushed: number; pulled: 
       }
     }
     if (changed) db[name].persistAfterMerge()
+  }
+
+  // 4) シングルトン(プロフィール / 目標)を kv テーブルで last-write-wins 同期
+  await pipeline(cfg, [
+    { sql: 'CREATE TABLE IF NOT EXISTS kv (key TEXT PRIMARY KEY, value TEXT, updatedAt INTEGER)' },
+  ])
+  // push
+  await pipeline(cfg, [
+    {
+      sql: 'INSERT INTO kv (key, value, updatedAt) VALUES (?, ?, ?) ON CONFLICT(key) DO UPDATE SET value=excluded.value, updatedAt=excluded.updatedAt WHERE excluded.updatedAt > kv.updatedAt',
+      args: [
+        { type: 'text', value: 'profile' },
+        { type: 'text', value: JSON.stringify(getProfile()) },
+        { type: 'integer', value: String(getProfileUpdatedAt()) },
+      ],
+    },
+  ])
+  // pull
+  const [kvRes] = await pipeline(cfg, [{ sql: "SELECT value, updatedAt FROM kv WHERE key = 'profile'" }])
+  if (kvRes && kvRes.rows.length) {
+    const remoteTs = Number(kvRes.rows[0].updatedAt)
+    if (remoteTs > getProfileUpdatedAt()) {
+      try {
+        setProfile({ ...DEFAULT_PROFILE, ...JSON.parse(String(kvRes.rows[0].value)) }, remoteTs)
+        pulled++
+      } catch {
+        /* ignore malformed */
+      }
+    }
   }
 
   setSyncMeta({ lastSync: now(), lastError: null })

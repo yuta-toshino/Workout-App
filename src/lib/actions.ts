@@ -3,11 +3,12 @@ import type {
   DailyCheck,
   DayType,
   HsLog,
+  Profile,
   RangeSession,
   SetLog,
   WorkoutSession,
 } from '../types'
-import { db, getTurso, setSyncMeta } from './store'
+import { db, getTurso, setProfile, setSyncMeta } from './store'
 import { now, uuid } from './id'
 import { sync } from './turso'
 
@@ -150,6 +151,12 @@ export function addRange(r: Omit<RangeSession, 'id' | 'updatedAt'>): RangeSessio
 
 export function rangeSorted(): RangeSession[] {
   return [...db.range.all()].sort((a, b) => (a.date < b.date ? 1 : -1))
+}
+
+// ===== プロフィール / 目標 =====
+export function saveProfile(p: Profile) {
+  setProfile(p)
+  scheduleSync()
 }
 
 // ===== 1日の栄養チェック =====

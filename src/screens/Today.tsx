@@ -56,7 +56,7 @@ export function Today({
   return (
     <div className="screen">
       <Header
-        eyebrow={formatJp(today)}
+        eyebrow={profile.name ? `${profile.name}さん ・ ${formatJp(today)}` : formatJp(today)}
         title="今日"
         sub={`${phase.name} ・ ${phase.period.replace(/\(.*\)/, '')}`}
         right={<SyncDot onClick={() => goToTab('settings')} />}
