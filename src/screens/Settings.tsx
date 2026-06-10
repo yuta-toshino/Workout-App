@@ -3,16 +3,8 @@ import type { Profile } from '../types'
 import { useStore } from '../hooks/useStore'
 import { Header } from '../components/ui'
 import { Icon } from '../components/Icon'
-import {
-  exportAll,
-  getProfile,
-  getSyncMeta,
-  getTurso,
-  importAll,
-  setProfile,
-  setTurso,
-} from '../lib/store'
-import { runSyncNow } from '../lib/actions'
+import { exportAll, getProfile, getSyncMeta, getTurso, importAll, setTurso } from '../lib/store'
+import { runSyncNow, saveProfile } from '../lib/actions'
 import { normalizeUrl, testConnection } from '../lib/turso'
 
 export function Settings() {
@@ -36,7 +28,7 @@ function ProfileCard() {
     setSaved(false)
   }
   const save = () => {
-    setProfile(p)
+    saveProfile(p)
     setSaved(true)
   }
   const num = (label: string, key: keyof Profile, suffix: string, step = 1) => (
@@ -100,10 +92,19 @@ function TursoCard() {
   const [status, setStatus] = useState<string | null>(null)
   const [busy, setBusy] = useState(false)
 
-  const saveCfg = () => {
+  const saveCfg = async () => {
     if (!url || !token) return
     setTurso({ url: normalizeUrl(url), token: token.trim() })
-    setStatus('保存しました')
+    setStatus('保存しました。同期中…')
+    setBusy(true)
+    try {
+      const r = await runSyncNow()
+      setStatus(r ? `✅ 保存して同期完了(↑${r.pushed} / ↓${r.pulled})` : '保存しました')
+    } catch (e) {
+      setStatus('保存しましたが同期に失敗: ' + (e instanceof Error ? e.message : String(e)))
+    } finally {
+      setBusy(false)
+    }
   }
   const test = async () => {
     setBusy(true)
