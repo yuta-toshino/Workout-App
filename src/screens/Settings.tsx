@@ -92,10 +92,19 @@ function TursoCard() {
   const [status, setStatus] = useState<string | null>(null)
   const [busy, setBusy] = useState(false)
 
-  const saveCfg = () => {
+  const saveCfg = async () => {
     if (!url || !token) return
     setTurso({ url: normalizeUrl(url), token: token.trim() })
-    setStatus('保存しました')
+    setStatus('保存しました。同期中…')
+    setBusy(true)
+    try {
+      const r = await runSyncNow()
+      setStatus(r ? `✅ 保存して同期完了(↑${r.pushed} / ↓${r.pulled})` : '保存しました')
+    } catch (e) {
+      setStatus('保存しましたが同期に失敗: ' + (e instanceof Error ? e.message : String(e)))
+    } finally {
+      setBusy(false)
+    }
   }
   const test = async () => {
     setBusy(true)
