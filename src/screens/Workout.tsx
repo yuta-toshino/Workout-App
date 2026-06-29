@@ -256,7 +256,8 @@ function WeightExercise({
   const nSets = resolveSets(ex, new Date(date))
   const last = lastTopWeight(ex.id, sessionId)
   const pr = prWeight(ex.id)
-  const suggestion = last ? last.weightKg + (ex.stepKg ?? 0) : null
+  // 履歴があれば前回+刻みを推奨。初回(履歴なし)は startKg を目標値として使う。
+  const suggestion = last ? last.weightKg + (ex.stepKg ?? 0) : (ex.startKg ?? null)
   const targetReps = parseReps(ex.reps)
 
   const existing = setsForExerciseInSession(sessionId, ex.id)
@@ -328,10 +329,18 @@ function WeightExercise({
             前回 <b style={{ color: 'var(--text)' }}>{last.weightKg}kg</b>
             {last.reps ? `×${last.reps}` : ''} ({formatJpShort(last.date)})
           </span>
+        ) : ex.startKg != null ? (
+          <span className="muted">
+            初回目標 <b style={{ color: 'var(--text)' }}>{ex.startKg}kg</b>(フォーム優先)
+          </span>
         ) : (
           <span className="faint">初回 — 空バー/軽めでフォーム習得</span>
         )}
-        {suggestion != null && <span className="chip blue" style={{ fontSize: 11 }}>推奨 {suggestion}kg</span>}
+        {suggestion != null && (
+          <span className="chip blue" style={{ fontSize: 11 }}>
+            {last ? '推奨' : '目標'} {suggestion}kg
+          </span>
+        )}
         {pr != null && <span className="chip" style={{ fontSize: 11 }}>PR {pr}kg</span>}
       </div>
 
