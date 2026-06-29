@@ -68,6 +68,9 @@ export function Workout({ date, dayType, onClose }: { date: string; dayType: Day
     setDone(true)
   }
 
+  // 完了済みセッションを「見直す」で開いた場合は閲覧専用(入力不可・時間固定)
+  const readOnly = !!session.completedAt
+
   // サマリー
   const doneSets = setsForSession(sessionId).filter((s) => s.done)
   const volume = doneSets.reduce((sum, s) => sum + (s.weightKg ?? 0) * (s.reps ?? 0), 0)
@@ -84,9 +87,9 @@ export function Workout({ date, dayType, onClose }: { date: string; dayType: Day
         </div>
         <div style={{ textAlign: 'right', minWidth: 56 }}>
           <div className="bold" style={{ fontVariantNumeric: 'tabular-nums' }}>
-            <ElapsedClock startedAt={session.startedAt} />
+            <ElapsedClock startedAt={session.startedAt} completedAt={session.completedAt} />
           </div>
-          <div className="tiny faint">経過</div>
+          <div className="tiny faint">{readOnly ? '所要' : '経過'}</div>
         </div>
       </div>
 
@@ -101,13 +104,22 @@ export function Workout({ date, dayType, onClose }: { date: string; dayType: Day
 
         {program.exercises.map((ex) =>
           ex.trackWeight ? (
-            <WeightExercise key={ex.id} ex={ex} date={date} sessionId={sessionId} startRest={startRest} />
+            <WeightExercise
+              key={ex.id}
+              ex={ex}
+              date={date}
+              sessionId={sessionId}
+              startRest={startRest}
+              readOnly={readOnly}
+            />
           ) : (
             <CheckExercise
               key={ex.id}
               ex={ex}
               checked={session.doneChecks.includes(ex.id)}
+              readOnly={readOnly}
               onToggle={() => {
+                if (readOnly) return
                 const willCheck = !session.doneChecks.includes(ex.id)
                 toggleCheck(sessionId, ex.id)
                 if (willCheck) startRest(ex.restSec)
@@ -122,9 +134,15 @@ export function Workout({ date, dayType, onClose }: { date: string; dayType: Day
       {restEndsAt && <RestBar endsAt={restEndsAt} setEndsAt={setRestEndsAt} />}
 
       <div className="workout-foot">
-        <button className="btn green" onClick={finish}>
-          <Icon name="check" size={18} /> ワークアウト完了
-        </button>
+        {readOnly ? (
+          <button className="btn ghost" disabled aria-disabled>
+            <Icon name="check" size={18} /> 完了済み(閲覧のみ)
+          </button>
+        ) : (
+          <button className="btn green" onClick={finish}>
+            <Icon name="check" size={18} /> ワークアウト完了
+          </button>
+        )}
       </div>
 
       {done && (
@@ -155,14 +173,15 @@ export function Workout({ date, dayType, onClose }: { date: string; dayType: Day
   )
 }
 
-/** 経過時間だけを毎秒更新する(親ツリーは再描画しない) */
-function ElapsedClock({ startedAt }: { startedAt: number }) {
+/** 経過時間だけを毎秒更新する(親ツリーは再描画しない)。完了済みは completedAt で固定。 */
+function ElapsedClock({ startedAt, completedAt }: { startedAt: number; completedAt: number | null }) {
   const [, force] = useState(0)
   useEffect(() => {
+    if (completedAt) return // 完了済みは時間を進めない
     const id = setInterval(() => force((x) => x + 1), 1000)
     return () => clearInterval(id)
-  }, [])
-  return <>{fmtDuration(Date.now() - startedAt)}</>
+  }, [completedAt])
+  return <>{fmtDuration((completedAt ?? Date.now()) - startedAt)}</>
 }
 
 /** レストの残り時間を自己更新で表示。0 になったら自動で閉じる。 */
@@ -247,11 +266,13 @@ function WeightExercise({
   date,
   sessionId,
   startRest,
+  readOnly,
 }: {
   ex: ExerciseDef
   date: string
   sessionId: string
   startRest: (sec?: number) => void
+  readOnly: boolean
 }) {
   const nSets = resolveSets(ex, new Date(date))
   const last = lastTopWeight(ex.id, sessionId)
@@ -291,6 +312,7 @@ function WeightExercise({
   }
 
   const onField = (i: number, field: 'w' | 'r', val: string) => {
+    if (readOnly) return
     const next = inputs[i] ? { ...inputs[i] } : { w: '', r: '' }
     next[field] = val
     setInputs((prev) => {
@@ -302,6 +324,7 @@ function WeightExercise({
   }
 
   const toggleDone = (i: number) => {
+    if (readOnly) return
     const turningOn = !(dbByIdx.get(i)?.done ?? false)
     let w = inputs[i]?.w ?? ''
     let r = inputs[i]?.r ?? ''
@@ -364,6 +387,7 @@ function WeightExercise({
               placeholder={suggestion != null ? String(suggestion) : '—'}
               value={inp.w}
               onChange={(e) => onField(i, 'w', e.target.value)}
+              disabled={readOnly}
             />
             <input
               className={`set-input ${inp.r !== '' ? 'filled' : ''}`}
@@ -372,11 +396,13 @@ function WeightExercise({
               placeholder={targetReps != null ? String(targetReps) : ex.reps}
               value={inp.r}
               onChange={(e) => onField(i, 'r', e.target.value)}
+              disabled={readOnly}
             />
             <button
               className={`check ${isDone ? 'on' : ''}`}
               style={{ justifySelf: 'center' }}
               onClick={() => toggleDone(i)}
+              disabled={readOnly}
               aria-label="完了"
             >
               <Icon name="check" size={16} />
@@ -388,7 +414,17 @@ function WeightExercise({
   )
 }
 
-function CheckExercise({ ex, checked, onToggle }: { ex: ExerciseDef; checked: boolean; onToggle: () => void }) {
+function CheckExercise({
+  ex,
+  checked,
+  onToggle,
+  readOnly,
+}: {
+  ex: ExerciseDef
+  checked: boolean
+  onToggle: () => void
+  readOnly: boolean
+}) {
   return (
     <div className="card" style={{ opacity: checked ? 0.72 : 1 }}>
       <div className="row" style={{ padding: 0, borderBottom: 'none' }}>
@@ -396,7 +432,12 @@ function CheckExercise({ ex, checked, onToggle }: { ex: ExerciseDef; checked: bo
           <ExerciseHead ex={ex} nSets={ex.sets} />
           <ExerciseMeta ex={ex} />
         </div>
-        <button className={`check ${checked ? 'on' : ''}`} onClick={onToggle} aria-label="完了">
+        <button
+          className={`check ${checked ? 'on' : ''}`}
+          onClick={onToggle}
+          disabled={readOnly}
+          aria-label="完了"
+        >
           <Icon name="check" size={16} />
         </button>
       </div>
