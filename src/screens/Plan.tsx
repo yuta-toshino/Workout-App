@@ -3,7 +3,7 @@ import type { DayType } from '../types'
 import type { WorkoutTarget } from '../App'
 import { Header } from '../components/ui'
 import { Icon } from '../components/Icon'
-import { PROGRAMS, resolveSets } from '../data/program'
+import { PHASE_TARGET_KG, PROGRAMS, resolveSets } from '../data/program'
 import { PHASES, phaseForDate } from '../data/phases'
 import {
   DIET_RULES,
@@ -187,6 +187,7 @@ function DayMenu({ onStartWorkout }: { onStartWorkout: (t: WorkoutTarget) => voi
   const [dt, setDt] = useState<DayType>('lower_a')
   const program = PROGRAMS[dt]
   const main = program.exercises.filter((e) => e.kind === 'main' || e.kind === 'accessory' || e.kind === 'power')
+  const currentPhase = phaseForDate(new Date())
 
   return (
     <Accordion title="曜日別メニュー" icon="dumbbell" defaultOpen>
@@ -216,6 +217,22 @@ function DayMenu({ onStartWorkout }: { onStartWorkout: (t: WorkoutTarget) => voi
                 {e.target && <span className="chip tiny" style={{ marginLeft: 6 }}>🎯 {e.target}</span>}
               </div>
               {e.equipment && <div className="tiny faint">{e.equipment}</div>}
+              {PHASE_TARGET_KG[e.id] && (
+                <div className="tiny faint" style={{ marginTop: 3 }}>
+                  {PHASE_TARGET_KG[e.id].map((kg, i) => (
+                    <span
+                      key={i}
+                      style={{
+                        marginRight: 8,
+                        fontWeight: currentPhase.id === i + 1 ? 700 : 400,
+                        color: currentPhase.id === i + 1 ? 'var(--accent)' : undefined,
+                      }}
+                    >
+                      P{i + 1} {kg}kg
+                    </span>
+                  ))}
+                </div>
+              )}
             </div>
             <span className="chip tiny">
               {resolveSets(e, new Date())}×{e.reps}

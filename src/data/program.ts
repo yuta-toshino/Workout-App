@@ -40,9 +40,8 @@ const LOWER_A: ExerciseDef[] = [
     atMin: 13,
     trackWeight: true,
     stepKg: 2.5,
-    startKg: 60,
     equipment: 'ヘックスバー(疲れる前に最初へ)',
-    tip: 'ウォームアップ:40kg×5→本番。目標 60kg→80kg×5。フォームに余裕が出たらバーベルバックスクワット(空バー)習得に移行。1セット目を横から撮影',
+    tip: 'ウォームアップ:軽めで足慣らし→本番。フォームに余裕が出たらバーベルバックスクワット(空バー)習得に移行。1セット目を横から撮影',
     alt: 'ヘックスバーが埋まっていたら45度レッグプレスを先に',
   },
   {
@@ -56,9 +55,8 @@ const LOWER_A: ExerciseDef[] = [
     atMin: 35,
     trackWeight: true,
     stepKg: 2.5,
-    startKg: 40,
     equipment: 'バーベル(後鎖=ゴルフHSの源)',
-    tip: '重量より先にヒンジのフォーム習得(腰のケガ予防)。背中フラット・ハムのストレッチ感。40kgで固めてから増量、目標 60kg×8',
+    tip: '重量より先にヒンジのフォーム習得(腰のケガ予防)。背中フラット・ハムのストレッチ感。フォームを固めてから増量',
   },
   {
     id: 'leg-press',
@@ -71,9 +69,8 @@ const LOWER_A: ExerciseDef[] = [
     atMin: 48,
     trackWeight: true,
     stepKg: 5,
-    startKg: 120,
     equipment: 'プレートロード式',
-    tip: '深く下ろしすぎて腰が浮かない範囲で。10回が余裕なら毎回+5kg、目標 150kg×10',
+    tip: '深く下ろしすぎて腰が浮かない範囲で。10回が余裕なら毎回+5kg',
   },
   {
     id: 'calf-raise',
@@ -86,9 +83,8 @@ const LOWER_A: ExerciseDef[] = [
     atMin: 56,
     trackWeight: true,
     stepKg: 5,
-    startKg: 60,
     equipment: 'レッグプレス台でカーフプレス(つま先を乗せ足首で押す)or 片足自重',
-    tip: '両足自重は負荷不足で効かない。可動域フル(下で伸ばす)+トップ1秒静止。目標 90kg×15',
+    tip: '両足自重は負荷不足で効かない。可動域フル(下で伸ばす)+トップ1秒静止',
   },
   {
     id: 'plank',
@@ -613,7 +609,7 @@ export const DAYTYPE_LABEL: Record<DayType, string> = {
 
 /**
  * フェーズに応じた有効セット数を返す。
- * ヘックスバーデッドは「最初の2ヶ月(6-7月)は1セット、8月以降3セット」。
+ * ヘックスバーデッドは「Phase1(7月)は1セット、Phase2(8月)以降は3セット」。
  */
 export function resolveSets(ex: ExerciseDef, date: Date): number {
   if (ex.id === 'hex-deadlift') {
@@ -621,6 +617,58 @@ export function resolveSets(ex: ExerciseDef, date: Date): number {
     return afterAug ? 3 : 1
   }
   return ex.sets
+}
+
+/**
+ * フェーズ別の目標重量(kg)。配列は [Phase1, Phase2, Phase3, Phase4]。
+ *
+ * 設計根拠(サイエンスベース):
+ * - 対象は筋トレ初心者の78kg男性、ボディリコンプ(軽い赤字)、ゴルフ志向。
+ * - 初心者は線形漸進(linear progression)で最初の数ヶ月の伸びが最大(ニュービーゲイン)。
+ *   そのため Phase1→2 の伸び幅を最大に、以降は逓減させる。
+ * - Phase2(筋力期)は赤字下でも初心者ボーナスで筋力が伸びる時期=大きく漸進。
+ * - Phase3(パワー期)は速度・複合トレ中心で漸進は緩やかに(主種目は継続、爆発系は速度優先で軽め据え置き)。
+ * - Phase4(仕上げ=強めの赤字でカット)は筋力維持が現実的=ほぼ据え置き〜微増(科学的に減量深いほど筋力は伸びにくい)。
+ * - レップ域ごとの妥当性:主コンパウンドは 5〜10RM、補助は 8〜15RM の中級者標準に概ね収まる範囲。
+ *   片手種目(ダンベル/ケーブル片側)は「片側1つあたり」の重量。爆発系は体重比5〜10%目安。
+ * - 数値はジムで扱いやすい刻み(2.5kg中心、小種目は1.25〜2.5kg)に丸め。
+ *   あくまで「そのフェーズで狙う目安(目標)」で、実際は線形漸進の現在地を優先。
+ */
+export const PHASE_TARGET_KG: Record<string, [number, number, number, number]> = {
+  // 下半身A
+  'hex-squat': [60, 85, 100, 105],
+  rdl: [40, 60, 72.5, 77.5],
+  'leg-press': [120, 160, 185, 195],
+  'calf-raise': [60, 85, 100, 105],
+  // 上半身A(マシン/ケーブル中心)
+  'chest-press': [30, 45, 55, 57.5],
+  'cable-fly': [10, 14, 17.5, 19], // ケーブル片側スタック
+  'shoulder-press-m': [25, 35, 42.5, 45],
+  'side-raise': [5, 7.5, 10, 11], // ダンベル片手
+  pushdown: [15, 22.5, 27.5, 30],
+  // パワー日(爆発系は速度優先=軽め)
+  'db-jump-squat': [6, 7, 8, 8], // ダンベル片手・体重比5〜10%
+  'cable-chop': [15, 20, 25, 27.5],
+  'cable-lift': [12.5, 17.5, 22.5, 25],
+  'torso-rotation': [20, 30, 37.5, 40],
+  // 下半身B(ヒンジ)
+  'hex-deadlift': [70, 100, 120, 127.5],
+  'hip-thrust': [60, 90, 107.5, 115],
+  bulgarian: [10, 16, 20, 22], // ダンベル片手
+  'leg-curl': [30, 42.5, 50, 52.5],
+  // 上半身B(プル)
+  'barbell-row': [40, 55, 65, 67.5],
+  'db-row': [20, 28, 34, 36], // ダンベル片手
+  'face-pull': [15, 22.5, 27.5, 30],
+  'preacher-curl': [15, 22.5, 27.5, 30],
+}
+
+/** 指定フェーズ(1〜4)での種目の目標重量(kg)。未設定の種目は null。 */
+export function targetKgForPhase(exId: string, phaseId: number): number | null {
+  const arr = PHASE_TARGET_KG[exId]
+  if (!arr) return null
+  const idx = Math.min(3, Math.max(0, phaseId - 1))
+  return arr[idx] ?? null
 }
 
 /** 重量を記録する種目だけを抽出(履歴/PR用) */

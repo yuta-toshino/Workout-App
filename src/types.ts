@@ -41,8 +41,6 @@ export interface ExerciseDef {
   trackWeight?: boolean
   /** 重量の推奨刻み(kg)。主種目=2.5、上半身は停滞時1.25等 */
   stepKg?: number
-  /** 初回の目標/開始重量(kg)。履歴が無い初回セッションで目標値として表示・プレースホルダーに使う */
-  startKg?: number
   /** 混雑時の代替種目(⇄) */
   alt?: string
   /** ガイド上の開始オフセット(分)。フォロー再生の目安 */

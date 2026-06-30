@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState, type Dispatch, type SetStateAction } from 'react'
 import type { DayType, ExerciseDef, SetLog, WorkoutSession } from '../types'
-import { PROGRAMS, resolveSets } from '../data/program'
+import { PROGRAMS, resolveSets, targetKgForPhase } from '../data/program'
+import { phaseForDate } from '../data/phases'
 import {
   completeSession,
   findSession,
@@ -286,8 +287,11 @@ function WeightExercise({
   const nSets = resolveSets(ex, new Date(date))
   const last = lastTopWeight(ex.id, sessionId)
   const pr = prWeight(ex.id)
-  // 履歴があれば前回+刻みを推奨。初回(履歴なし)は startKg を目標値として使う。
-  const suggestion = last ? last.weightKg + (ex.stepKg ?? 0) : (ex.startKg ?? null)
+  // 現在のフェーズの目標重量(裏側で種目×フェーズの重量を保持)
+  const phase = phaseForDate(new Date(date))
+  const phaseTarget = targetKgForPhase(ex.id, phase.id)
+  // 履歴があれば前回+刻みを推奨。初回(履歴なし)はフェーズ目標を表示・プレースホルダーに使う。
+  const suggestion = last ? last.weightKg + (ex.stepKg ?? 0) : phaseTarget
   const targetReps = parseReps(ex.reps)
 
   const existing = setsForExerciseInSession(sessionId, ex.id)
@@ -361,16 +365,16 @@ function WeightExercise({
             前回 <b style={{ color: 'var(--text)' }}>{last.weightKg}kg</b>
             {last.reps ? `×${last.reps}` : ''} ({formatJpShort(last.date)})
           </span>
-        ) : ex.startKg != null ? (
+        ) : phaseTarget != null ? (
           <span className="muted">
-            初回目標 <b style={{ color: 'var(--text)' }}>{ex.startKg}kg</b>(フォーム優先)
+            Phase {phase.id} 目標 <b style={{ color: 'var(--text)' }}>{phaseTarget}kg</b>
           </span>
         ) : (
-          <span className="faint">初回 — 空バー/軽めでフォーム習得</span>
+          <span className="faint">初回 — 軽めでフォーム習得</span>
         )}
         {suggestion != null && (
           <span className="chip blue" style={{ fontSize: 11 }}>
-            {last ? '推奨' : '目標'} {suggestion}kg
+            {last ? '推奨' : `P${phase.id}目標`} {suggestion}kg
           </span>
         )}
         {pr != null && <span className="chip" style={{ fontSize: 11 }}>PR {pr}kg</span>}

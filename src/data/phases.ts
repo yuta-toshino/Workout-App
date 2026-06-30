@@ -16,15 +16,16 @@ export interface Phase {
   targetHs?: number
 }
 
-// 統合プラン H. フェーズ分けロードマップ(2026年6月〜12月)
+// 統合プラン H. フェーズ分けロードマップ(2026年7月〜12月)
+// ※トレ開始が2026年6月末のため、Phase1を7月始まりに後ろ倒し。仕上げ期は12月のみに圧縮。
 export const PHASES: Phase[] = [
   {
     id: 1,
     name: 'Phase 1 基礎習得期',
-    period: '2026年6月(4週)',
-    start: '2026-06-01',
-    end: '2026-06-30',
-    focus: 'バーベルフォーム習得、軽負荷、モビリティ確立、オーバースピード開始',
+    period: '2026年7月(4週)',
+    start: '2026-07-01',
+    end: '2026-07-31',
+    focus: 'フォーム習得、軽〜中負荷、モビリティ確立、オーバースピード開始',
     diet: '軽い赤字スタート(維持 -15%)',
     milestone: '体重76〜77kg / 全種目フォーム確立',
     targetWeight: 76.5,
@@ -32,9 +33,9 @@ export const PHASES: Phase[] = [
   {
     id: 2,
     name: 'Phase 2 筋力向上期',
-    period: '2026年7〜8月(8週)',
-    start: '2026-07-01',
-    end: '2026-08-31',
+    period: '2026年8〜9月(8週)',
+    start: '2026-08-01',
+    end: '2026-09-30',
     focus: '線形漸進で筋力ベース構築、回旋パワー追加、バイク有酸素で減量加速',
     diet: '赤字継続、タンパク高め',
     milestone: '体重73〜75kg / 体脂肪20%前後 / HS49〜50',
@@ -45,9 +46,9 @@ export const PHASES: Phase[] = [
   {
     id: 3,
     name: 'Phase 3 パワー特化期',
-    period: '2026年9〜10月(8週)',
-    start: '2026-09-01',
-    end: '2026-10-31',
+    period: '2026年10〜11月(8週)',
+    start: '2026-10-01',
+    end: '2026-11-30',
     focus: '複合トレ・プライオ・オーバースピード強化、速度転写',
     diet: '維持〜軽い赤字(必要ならダイエットブレイク1週)',
     milestone: '体重72〜74kg / 体脂肪16〜18% / HS50〜52',
@@ -58,8 +59,8 @@ export const PHASES: Phase[] = [
   {
     id: 4,
     name: 'Phase 4 仕上げ期',
-    period: '2026年11〜12月(8週)',
-    start: '2026-11-01',
+    period: '2026年12月(4週)',
+    start: '2026-12-01',
     end: '2026-12-31',
     focus: 'パワー維持+最終カットで腹筋を出す、クラブフィッティング',
     diet: 'やや強めの赤字で脂肪を絞る',
@@ -77,7 +78,7 @@ export function phaseForDate(date: Date): Phase {
   for (const p of PHASES) {
     if (ymd >= p.start && ymd <= p.end) return p
   }
-  // 期間外:6月より前は Phase1、12月より後は Phase4 を返す
+  // 期間外:7月より前(開始前の6月など)は Phase1、12月より後は Phase4 を返す
   if (ymd < PHASES[0].start) return PHASES[0]
   return PHASES[PHASES.length - 1]
 }
