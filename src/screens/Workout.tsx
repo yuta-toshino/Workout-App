@@ -243,6 +243,11 @@ function ExerciseHead({ ex, nSets }: { ex: ExerciseDef; nSets: number }) {
           <span className={`chip ${c.cls}`} style={{ fontSize: 10, padding: '2px 8px' }}>
             {c.label}
           </span>
+          {ex.target && (
+            <span className="chip" style={{ fontSize: 10, padding: '2px 8px' }}>
+              🎯 {ex.target}
+            </span>
+          )}
         </div>
         <div className="tiny faint" style={{ marginTop: 2 }}>
           {ex.atMin != null && `0:${String(ex.atMin).padStart(2, '0')} ・ `}

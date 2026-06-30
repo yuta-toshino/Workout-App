@@ -27,6 +27,8 @@ export interface ExerciseDef {
   sets: number
   /** 表示用レップ目標(例: "5", "8", "45秒", "20分") */
   reps: string
+  /** 狙う部位(例: "大胸筋", "ハムストリングス・臀筋")。画面に表示して意識づけに使う */
+  target?: string
   /** レスト秒(主3分=180 等)。cardio/mobility は省略 */
   restSec?: number
   /** 使用設備・補足 */

@@ -211,7 +211,10 @@ function DayMenu({ onStartWorkout }: { onStartWorkout: (t: WorkoutTarget) => voi
         {main.map((e) => (
           <div className="row" key={e.id} style={{ padding: '9px 4px' }}>
             <div className="grow">
-              <div className="small bold">{e.name}</div>
+              <div className="small bold">
+                {e.name}
+                {e.target && <span className="chip tiny" style={{ marginLeft: 6 }}>🎯 {e.target}</span>}
+              </div>
               {e.equipment && <div className="tiny faint">{e.equipment}</div>}
             </div>
             <span className="chip tiny">
