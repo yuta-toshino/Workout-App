@@ -91,8 +91,8 @@ export function Today({
 
         {isGym && (
           <button className={`btn ${completed ? 'ghost' : 'primary'} mt`} onClick={() => onStartWorkout({ date: ymd, dayType })}>
-            <Icon name={completed ? 'check' : 'play'} size={18} />
-            {completed ? 'ワークアウトを見直す' : 'ワークアウト開始'}
+            <Icon name={completed ? 'check' : 'plan'} size={18} />
+            {completed ? 'ワークアウトを見直す' : 'ワークアウトを確認する'}
           </button>
         )}
 

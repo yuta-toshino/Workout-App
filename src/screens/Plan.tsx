@@ -221,7 +221,7 @@ function DayMenu({ onStartWorkout }: { onStartWorkout: (t: WorkoutTarget) => voi
         ))}
       </div>
       <button className="btn primary mt" onClick={() => onStartWorkout({ date: todayYmd(), dayType: dt })}>
-        <Icon name="play" size={16} /> このメニューで開始
+        <Icon name="plan" size={16} /> このメニューを確認する
       </button>
     </Accordion>
   )

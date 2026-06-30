@@ -28,14 +28,15 @@ export function Workout({ date, dayType, onClose }: { date: string; dayType: Day
   useStore()
   const program = PROGRAMS[dayType]
 
-  // 既存セッションがあれば再開、なければ provisional を生成(レンダー中は永続化しない)
+  // 既存セッションがあれば再開、なければ provisional を生成。
+  // 画面を「確認」で開いただけでは開始扱いにしない → 永続化は「ワークアウト開始」を押した時のみ。
   const [provisional] = useState<WorkoutSession>(
     () =>
       findSession(date, dayType) ?? {
         id: uuid(),
         date,
         dayType,
-        startedAt: now(),
+        startedAt: 0, // 0 = 未開始
         completedAt: null,
         doneChecks: [],
         note: '',
@@ -44,16 +45,13 @@ export function Workout({ date, dayType, onClose }: { date: string; dayType: Day
   )
   const sessionId = provisional.id
 
-  // 永続化は副作用(マウント後)で行う → レンダー中の通知を避ける
-  useEffect(() => {
-    if (!db.sessions.get(sessionId)) {
-      db.sessions.upsert(provisional)
-      scheduleSync()
-    }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [])
-
-  const session = db.sessions.get(sessionId) ?? provisional
+  // ストア上に実体があれば「開始済み」。確認だけなら provisional のまま(未永続)。
+  const live = db.sessions.get(sessionId)
+  const session = live ?? provisional
+  const started = !!live
+  const completed = !!session.completedAt
+  // 編集できるのは「進行中(開始済み かつ 未完了)」のときだけ。未開始・完了済みは閲覧専用。
+  const readOnly = !started || completed
 
   const [restEndsAt, setRestEndsAt] = useState<number | null>(null)
   const [done, setDone] = useState(false)
@@ -63,13 +61,15 @@ export function Workout({ date, dayType, onClose }: { date: string; dayType: Day
     setRestEndsAt(Date.now() + sec * 1000)
   }
 
+  const start = () => {
+    db.sessions.upsert({ ...provisional, startedAt: now(), updatedAt: now() })
+    scheduleSync()
+  }
+
   const finish = () => {
     completeSession(sessionId)
     setDone(true)
   }
-
-  // 完了済みセッションを「見直す」で開いた場合は閲覧専用(入力不可・時間固定)
-  const readOnly = !!session.completedAt
 
   // サマリー
   const doneSets = setsForSession(sessionId).filter((s) => s.done)
@@ -87,9 +87,9 @@ export function Workout({ date, dayType, onClose }: { date: string; dayType: Day
         </div>
         <div style={{ textAlign: 'right', minWidth: 56 }}>
           <div className="bold" style={{ fontVariantNumeric: 'tabular-nums' }}>
-            <ElapsedClock startedAt={session.startedAt} completedAt={session.completedAt} />
+            {started ? <ElapsedClock startedAt={session.startedAt} completedAt={session.completedAt} /> : '—'}
           </div>
-          <div className="tiny faint">{readOnly ? '所要' : '経過'}</div>
+          <div className="tiny faint">{completed ? '所要' : started ? '経過' : '未開始'}</div>
         </div>
       </div>
 
@@ -134,13 +134,17 @@ export function Workout({ date, dayType, onClose }: { date: string; dayType: Day
       {restEndsAt && <RestBar endsAt={restEndsAt} setEndsAt={setRestEndsAt} />}
 
       <div className="workout-foot">
-        {readOnly ? (
+        {completed ? (
           <button className="btn ghost" disabled aria-disabled>
-            <Icon name="check" size={18} /> 完了済み(閲覧のみ)
+            <Icon name="check" size={18} /> ワークアウト完了済み
           </button>
-        ) : (
+        ) : started ? (
           <button className="btn green" onClick={finish}>
             <Icon name="check" size={18} /> ワークアウト完了
+          </button>
+        ) : (
+          <button className="btn primary" onClick={start}>
+            <Icon name="play" size={18} /> ワークアウト開始
           </button>
         )}
       </div>
